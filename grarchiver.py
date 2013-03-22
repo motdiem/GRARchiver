@@ -34,26 +34,31 @@ if r.status_code <> 200:
 	sys.exit()
 
 userid=r.json().get('userId') 
-print "Your userid is : " + userid + " - Now Fetching read counts"
+print "Your userid is : " + userid 
 
 #### Fetch Read Items ########### 
 url = 'https://www.google.com/reader/api/0/stream/items/count'
 payload = {'ck': '20130316', 'client': 'GRARCHIVER','s':'user/'+userid+'/state/com.google/read','a':'true'}
 
-r = requests.get(url,params=payload, headers=headers)
-itemcount = int(r.text.split('#')[0].replace(',',''))
-print "You have : " + str(itemcount) + " read items - Now fetching them"
+
+# Not retrieving read items anymore, just using continuation
+#r = requests.get(url,params=payload, headers=headers)
+#itemcount = int(r.text.split('#')[0].replace(',',''))
+#print "You have : " + str(itemcount) + " read items - Now fetching them"
  
 continuation=''
 batchitems=[{}]
 n = 1000
 
-for i in range(itemcount/n+1):
-	print 'doing batch ' + str(i)	
+
+while True:
 	url='https://www.google.com/reader/api/0/stream/contents/user/'+userid+'/state/com.google/read'
 	payload = {'ck': '20130316', 'client': 'GRARCHIVER', 'output':'json',  'n': n, 'c':continuation}
 	r = requests.get(url,params=payload, headers=headers)
 	continuation = r.json().get('continuation')
+	if continuation is None:
+		break
+	print 'doing next batch: ' + continuation
 	for item in r.json().get('items'):
 		batchitems.append(item)
 
